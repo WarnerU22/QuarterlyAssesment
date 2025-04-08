@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from admin_panel import open_admin_panel
+from quiz_taker import launch_quiz
 
 
 # Constants
@@ -39,9 +40,9 @@ def show_admin_login():
 
 # --- Quiz Taker Flow ---
 def launch_quiz_taker():
-    messagebox.showinfo("Quiz Taker", "Launching quiz interface...")
     root.destroy()
-    # TODO: Open quiz interface here
+    launch_quiz()
+
 
 # Buttons
 admin_button = tk.Button(root, text="Administrator", command=show_admin_login, width=20)
