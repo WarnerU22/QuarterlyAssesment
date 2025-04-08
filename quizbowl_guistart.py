@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
+from admin_panel import open_admin_panel
+
 
 # Constants
 ADMIN_PASSWORD = "admin123"  # You can change this
@@ -20,7 +22,8 @@ def show_admin_login():
         if entered == ADMIN_PASSWORD:
             messagebox.showinfo("Access Granted", "Welcome, Admin!")
             root.destroy()
-            # TODO: Open admin interface here
+            open_admin_panel()
+
         else:
             messagebox.showerror("Access Denied", "Incorrect password.")
 
