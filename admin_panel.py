@@ -90,5 +90,67 @@ def open_add_question(parent_window):
 
 
 def open_manage_questions(parent_window):
-    messagebox.showinfo("Coming Soon", "Edit/Delete question screen is under construction.")
+    manage_window = tk.Toplevel(parent_window)
+    manage_window.title("Manage Questions")
+    manage_window.geometry("600x400")
+
+    tk.Label(manage_window, text="Select Category:").pack()
+    category_var = tk.StringVar()
+    category_dropdown = ttk.Combobox(manage_window, textvariable=category_var, values=CATEGORIES, state='readonly')
+    category_dropdown.pack(pady=5)
+
+    # Listbox to display questions
+    question_listbox = tk.Listbox(manage_window, width=80)
+    question_listbox.pack(pady=10)
+
+    def load_questions():
+        question_listbox.delete(0, tk.END)
+        category = category_var.get()
+        if not category:
+            return
+
+        try:
+            conn = sqlite3.connect("quiz_bowl.db")
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT id, question FROM {category}_questions")
+            questions = cursor.fetchall()
+            conn.close()
+
+            for q in questions:
+                display = f"{q[0]}: {q[1][:80]}..."  # Show ID and first part of question
+                question_listbox.insert(tk.END, display)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load questions:\n{e}")
+
+    def delete_selected_question():
+        selected = question_listbox.curselection()
+        if not selected:
+            messagebox.showwarning("No selection", "Please select a question to delete.")
+            return
+
+        question_text = question_listbox.get(selected[0])
+        question_id = question_text.split(":")[0]
+        category = category_var.get()
+
+        confirm = messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this question?")
+        if not confirm:
+            return
+
+        try:
+            conn = sqlite3.connect("quiz_bowl.db")
+            cursor = conn.cursor()
+            cursor.execute(f"DELETE FROM {category}_questions WHERE id = ?", (question_id,))
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Deleted", "Question deleted successfully.")
+            load_questions()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not delete question:\n{e}")
+
+    # Load and delete buttons
+    tk.Button(manage_window, text="Load Questions", command=load_questions).pack(pady=5)
+    tk.Button(manage_window, text="Delete Selected Question", command=delete_selected_question).pack(pady=5)
 
