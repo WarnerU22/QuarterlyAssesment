@@ -11,7 +11,7 @@ def launch_quiz():
     window.geometry("400x200")
 
     tk.Label(window, text="Choose a Quiz Category:", font=("Arial", 14)).pack(pady=20)
-    
+
     selected_category = tk.StringVar()
     dropdown = ttk.Combobox(window, textvariable=selected_category, values=CATEGORIES, state='readonly')
     dropdown.pack(pady=10)
@@ -21,7 +21,6 @@ def launch_quiz():
         if not category:
             messagebox.showwarning("Hold up", "Please select a category!")
             return
-
         window.destroy()
         load_questions(category)
 
@@ -45,23 +44,27 @@ def load_questions(category):
         return
 
     random.shuffle(data)
-    quiz_session(data[:10])  # Limit to 10 questions
+    quiz_session(data[:10])  # Use only first 10 questions
 
 
 def quiz_session(questions):
-    score = [0]  # Using a list so we can modify inside nested function
+    score = [0]
     index = [0]
 
     quiz_window = tk.Tk()
     quiz_window.title("Quiz In Progress")
     quiz_window.geometry("600x400")
 
-    question_var = tk.StringVar()
-    selected_answer = tk.StringVar()
+    counter_label = tk.Label(quiz_window, text="", font=("Arial", 10))
+    counter_label.pack()
 
     question_label = tk.Label(quiz_window, text="", wraplength=500, font=("Arial", 12))
-    question_label.pack(pady=20)
+    question_label.pack(pady=10)
 
+    feedback_label = tk.Label(quiz_window, text="", font=("Arial", 12))
+    feedback_label.pack()
+
+    selected_answer = tk.StringVar()
     radio_buttons = []
     for val in ["A", "B", "C", "D"]:
         rb = tk.Radiobutton(quiz_window, text="", variable=selected_answer, value=val, font=("Arial", 10))
@@ -71,14 +74,14 @@ def quiz_session(questions):
     def display_question():
         if index[0] < len(questions):
             q = questions[index[0]]
-            question_var.set(q[0])
             selected_answer.set("")
-
-            question_label.config(text=f"Q{index[0]+1}: {q[0]}")
+            counter_label.config(text=f"Question {index[0] + 1} of {len(questions)}")
+            question_label.config(text=f"{q[0]}")
             radio_buttons[0].config(text=f"A. {q[1]}")
             radio_buttons[1].config(text=f"B. {q[2]}")
             radio_buttons[2].config(text=f"C. {q[3]}")
             radio_buttons[3].config(text=f"D. {q[4]}")
+            feedback_label.config(text="")
         else:
             quiz_window.destroy()
             show_score(score[0], len(questions))
@@ -91,7 +94,13 @@ def quiz_session(questions):
         correct = questions[index[0]][5]
         if selected_answer.get() == correct:
             score[0] += 1
+            feedback_label.config(text="✅ Correct!", fg="green")
+        else:
+            feedback_label.config(text=f"❌ Incorrect. Correct answer: {correct}", fg="red")
 
+        quiz_window.after(1500, next_question)
+
+    def next_question():
         index[0] += 1
         display_question()
 
