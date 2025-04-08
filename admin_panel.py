@@ -154,3 +154,77 @@ def open_manage_questions(parent_window):
     tk.Button(manage_window, text="Load Questions", command=load_questions).pack(pady=5)
     tk.Button(manage_window, text="Delete Selected Question", command=delete_selected_question).pack(pady=5)
 
+    tk.Button(manage_window, text="Edit Selected Question", command=lambda: edit_selected_question(category_var.get(), question_listbox)).pack(pady=5)
+
+def edit_selected_question(category, listbox):
+    selected = listbox.curselection()
+    if not selected:
+        messagebox.showwarning("No selection", "Please select a question to edit.")
+        return
+
+    item = listbox.get(selected[0])
+    question_id = item.split(":")[0]
+
+    try:
+        conn = sqlite3.connect("quiz_bowl.db")
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT question, option_a, option_b, option_c, option_d, correct_answer FROM {category}_questions WHERE id = ?", (question_id,))
+        data = cursor.fetchone()
+        conn.close()
+    except Exception as e:
+        messagebox.showerror("Error", f"Could not load question:\n{e}")
+        return
+
+    # Open edit window
+    edit_win = tk.Toplevel()
+    edit_win.title("Edit Question")
+    edit_win.geometry("500x550")
+
+    tk.Label(edit_win, text="Edit Question:").pack()
+    question_entry = tk.Text(edit_win, height=4, width=50)
+    question_entry.insert("1.0", data[0])
+    question_entry.pack()
+
+    labels = ["A", "B", "C", "D"]
+    options_entries = []
+
+    for i in range(4):
+        tk.Label(edit_win, text=f"Option {labels[i]}:").pack()
+        entry = tk.Entry(edit_win, width=50)
+        entry.insert(0, data[i+1])
+        entry.pack()
+        options_entries.append(entry)
+
+    tk.Label(edit_win, text="Correct Answer (A/B/C/D):").pack()
+    correct_var = tk.StringVar()
+    correct_dropdown = ttk.Combobox(edit_win, textvariable=correct_var, values=["A", "B", "C", "D"], state='readonly')
+    correct_dropdown.set(data[5])
+    correct_dropdown.pack(pady=10)
+
+    def save_changes():
+        new_question = question_entry.get("1.0", tk.END).strip()
+        new_options = [e.get().strip() for e in options_entries]
+        new_correct = correct_var.get()
+
+        if not all([new_question] + new_options + [new_correct]):
+            messagebox.showwarning("Incomplete", "Please fill in all fields.")
+            return
+
+        try:
+            conn = sqlite3.connect("quiz_bowl.db")
+            cursor = conn.cursor()
+            cursor.execute(f"""
+                UPDATE {category}_questions
+                SET question = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_answer = ?
+                WHERE id = ?
+            """, (new_question, *new_options, new_correct, question_id))
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", "Question updated successfully.")
+            edit_win.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not update question:\n{e}")
+
+    tk.Button(edit_win, text="Save Changes", command=save_changes).pack(pady=20)
+
